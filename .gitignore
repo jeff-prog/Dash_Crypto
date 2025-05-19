@@ -1,1 +1,17 @@
+# Ambientes virtuais e temporários
 .venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs e arquivos sensíveis
+*.log
+.env
+
+# VS Code
+.vscode/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
