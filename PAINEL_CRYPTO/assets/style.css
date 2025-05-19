@@ -1,0 +1,43 @@
+body {
+    background-color: #121212;
+    color: #ffffff;
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    font-size: 2em;
+    margin-top: 20px;
+    text-align: center;
+}
+
+label {
+    color: #ddd;
+    font-weight: bold;
+}
+
+.dash-table-container {
+    border-radius: 10px;
+    box-shadow: 0 0 10px #00000088;
+}
+
+.dash-table-container img {
+    height: 20px !important;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+#paginacao button {
+    background-color: #333;
+    color: white;
+    border: 1px solid #555;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#paginacao button:hover {
+    background-color: #555;
+}
