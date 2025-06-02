@@ -20,3 +20,13 @@ python -m venv .venv
 source .venv/Scripts/activate     # Windows
 pip install -r requirements.txt
 python app.py
+
+## 🚀 Como rodar o projeto no GIT
+
+cd C:/Users/jeffe/Desktop/PROJETO_CRYPTO  # ou a pasta do seu projeto real
+git status
+git add .
+git commit -m "Alterados arquivos .gitnore e README"
+git push
+
+

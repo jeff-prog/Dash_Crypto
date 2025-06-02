@@ -1,16 +1,26 @@
+# =====================================
+# Painel de Criptomoedas - app.py
+# Desenvolvido com Dash e CoinGecko API
+# =====================================
+
+import matplotlib
+matplotlib.use('Agg')  # Força uso de backend sem interface gráfica
+
 import requests
 import dash
-from dash import dcc, html, Input, Output, State
-import plotly.graph_objs as go
-import datetime
+from dash import dcc, html, Input, Output, State, ctx
 import base64
 from io import BytesIO
 import matplotlib.pyplot as plt
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, suppress_callback_exceptions=True)
 app.title = "Painel Cripto em Tempo Real"
 
-# Função para buscar os dados principais das criptos
+tipo_ordenacao = {
+    "coluna": None,
+    "asc": True
+}
+
 def obter_criptos(moeda='usd', pagina=1):
     url = "https://api.coingecko.com/api/v3/coins/markets"
     params = {
@@ -29,7 +39,6 @@ def obter_criptos(moeda='usd', pagina=1):
         print(f"Erro ao buscar dados: {e}")
         return []
 
-# Mini grafico base64 com matplotlib
 def mini_grafico(lista):
     fig, ax = plt.subplots(figsize=(2, 0.5), dpi=100)
     ax.plot(lista, color='lime', linewidth=1)
@@ -42,7 +51,6 @@ def mini_grafico(lista):
     plt.close(fig)
     return f"data:image/png;base64,{encoded}"
 
-# Barra de progresso para supply
 def barra_supply(porcentagem):
     return html.Div([
         html.Div(style={
@@ -58,25 +66,30 @@ def barra_supply(porcentagem):
         "overflow": "hidden"
     })
 
-# Função para construir a tabela com html.Table
+def icone(variacao):
+    valor = float(variacao.replace('%',''))
+    cor = "limegreen" if valor > 0 else "red"
+    simbolo = "▲" if valor > 0 else "▼"
+    return html.Span([
+        html.Span(simbolo, style={"color": cor, "fontWeight": "bold"}),
+        f" {variacao}"
+    ])
+
 def construir_tabela(dados):
     linhas = []
     for cripto in dados:
-        icon_1h = "🔺" if float(cripto['1h'].replace('%','')) > 0 else "🔻"
-        icon_24h = "🔺" if float(cripto['24h'].replace('%','')) > 0 else "🔻"
-        icon_7d = "🔺" if float(cripto['7d'].replace('%','')) > 0 else "🔻"
-
         linhas.append(html.Tr([
             html.Td(cripto['rank']),
             html.Td([
                 html.Img(src=cripto['image'], style={"height": "20px", "marginRight": "6px"}),
-                f"{cripto['name']} ({cripto['symbol'].upper()})"
+                html.Span(f"{cripto['name']} ({cripto['symbol'].upper()})")
             ]),
             html.Td(cripto['preco']),
-            html.Td([icon_1h, " ", cripto['1h']]),
-            html.Td([icon_24h, " ", cripto['24h']]),
-            html.Td([icon_7d, " ", cripto['7d']]),
+            html.Td(icone(f"{cripto['1h_valor']:.2f}%")),
+            html.Td(icone(f"{cripto['24h_valor']:.2f}%")),
+            html.Td(icone(f"{cripto['7d_valor']:.2f}%")),
             html.Td(cripto['volume']),
+            html.Td(cripto['marketcap']),
             html.Td([
                 f"{cripto['supply']} ",
                 barra_supply(cripto['supply_percent'])
@@ -84,12 +97,25 @@ def construir_tabela(dados):
             html.Td(html.Img(src=cripto['mini_chart'], style={"height": "30px"}))
         ]))
 
+    def th_coluna(nome, id_coluna):
+        seta = " ▲" if tipo_ordenacao['coluna'] != id_coluna else (" ▲" if tipo_ordenacao['asc'] else " ▼")
+        return html.Th([nome + seta], id=f"col-{id_coluna}", style={"cursor": "pointer"})
+
+    cabecalho = html.Tr([
+        th_coluna("#", "rank"),
+        th_coluna("Nome", "name"),
+        th_coluna("Preço", "preco_valor"),
+        th_coluna("1h %", "1h_valor"),
+        th_coluna("24h %", "24h_valor"),
+        th_coluna("7d %", "7d_valor"),
+        th_coluna("Volume", "volume_valor"),
+        th_coluna("Market Cap", "marketcap_valor"),
+        th_coluna("Supply", "supply_valor"),
+        html.Th("Gráfico")
+    ])
+
     return html.Table([
-        html.Thead(html.Tr([
-            html.Th("#"), html.Th("Nome"), html.Th("Preço"), html.Th("1h %"),
-            html.Th("24h %"), html.Th("7d %"), html.Th("Volume"), html.Th("Supply"),
-            html.Th("Últimos 7d")
-        ])),
+        html.Thead(cabecalho),
         html.Tbody(linhas)
     ], style={
         "width": "100%",
@@ -99,7 +125,24 @@ def construir_tabela(dados):
         "textAlign": "center"
     })
 
+# (o restante do código continua como no seu original, sem cortes!)
+# ======================
+# Layout principal
+# ======================
 app.layout = html.Div([
+    html.Script("""
+    document.addEventListener('DOMContentLoaded', function() {
+        const observer = new MutationObserver(() => {
+            const store = document.querySelector('[id^="tema-claro"]');
+            if (store) {
+                const data = store.textContent.includes("true");
+                document.body.classList.toggle("modo-claro", data);
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    });
+    """),
+    html.Button("Alternar Tema", id='botao-tema', n_clicks=0, style={"margin": "10px"}),
     html.H1("Painel de Criptomoedas"),
     html.P("Atualizado a cada 30 segundos", style={"textAlign": "center"}),
 
@@ -116,12 +159,11 @@ app.layout = html.Div([
             clearable=False
         ),
         html.Br(),
-        dcc.Input(id='filtro-nome', type='text', placeholder='Filtrar por nome da moeda', debounce=True, style={"width": "100%", "padding": "10px"})
+        dcc.Input(id='filtro-nome', type='text', placeholder='Filtrar por nome da moeda', debounce=True,
+                  style={"width": "100%", "padding": "10px"})
     ], style={"width": "30%", "margin": "auto", "marginBottom": "20px"}),
 
     html.Div(id='tabela'),
-
-    dcc.Graph(id='grafico'),
 
     html.Div([
         html.Button("<<", id='primeira-pagina', n_clicks=0),
@@ -131,11 +173,18 @@ app.layout = html.Div([
         html.Button(">>", id='ultima-pagina', n_clicks=0)
     ], id='paginacao', style={"display": "flex", "justifyContent": "center", "gap": "10px", "marginTop": "20px"}),
 
-    dcc.Interval(id='intervalo', interval=30 * 1000, n_intervals=0)
+    dcc.Interval(id='intervalo', interval=30 * 1000, n_intervals=0),
+    dcc.Store(id='dados-memoria'),
+    dcc.Store(id='tema-claro', data=False),
+    dcc.Store(id='ordenacao-store')
 ])
 
+# ======================
+# Callback para atualizar dados
+# ======================
 @app.callback(
     Output('tabela', 'children'),
+    Output('dados-memoria', 'data'),
     [Input('moeda-base', 'value'),
      Input('pagina-atual', 'value'),
      Input('intervalo', 'n_intervals'),
@@ -147,37 +196,65 @@ def atualizar_tabela(moeda, pagina, n, filtro_nome):
     lista = []
 
     for c in dados:
-        percent = min(100, (c['circulating_supply'] / (c['max_supply'] or c['circulating_supply'])) * 100) if c.get('max_supply') else 100
+        percent = min(100, (c['circulating_supply'] / (c['max_supply'] or c['circulating_supply'])) * 100)
         item = {
             "rank": c['market_cap_rank'],
             "name": c['name'],
             "symbol": c['symbol'],
             "image": c['image'],
             "preco": f"{simbolo} {c['current_price']:,.2f}",
-            "1h": f"{c['price_change_percentage_1h_in_currency']:.2f}%",
-            "24h": f"{c['price_change_percentage_24h_in_currency']:.2f}%",
-            "7d": f"{c['price_change_percentage_7d_in_currency']:.2f}%",
+            "1h_valor": c['price_change_percentage_1h_in_currency'],
+            "24h_valor": c['price_change_percentage_24h_in_currency'],
+            "7d_valor": c['price_change_percentage_7d_in_currency'],
             "volume": f"{simbolo} {c['total_volume']:,.0f}",
+            "marketcap": f"{simbolo} {c['market_cap']:,.0f}",
             "supply": f"{c['circulating_supply'] / 1_000_000:.2f}M {c['symbol'].upper()}",
             "supply_percent": percent,
-            "mini_chart": mini_grafico(c['sparkline_in_7d']['price'])
+            "mini_chart": mini_grafico(c['sparkline_in_7d']['price']),
+            "preco_valor": c['current_price'],
+            "volume_valor": c['total_volume'],
+            "marketcap_valor": c['market_cap'],
+            "supply_valor": c['circulating_supply']
         }
         lista.append(item)
 
     if filtro_nome:
         lista = [l for l in lista if filtro_nome.lower() in l['name'].lower()]
 
-    return construir_tabela(lista)
+    if tipo_ordenacao['coluna']:
+        coluna = tipo_ordenacao['coluna']
+        reverso = not tipo_ordenacao['asc']
+        lista = sorted(lista, key=lambda x: x[coluna], reverse=reverso)
 
+    return construir_tabela(lista), lista
+
+# ======================
+# Callback para ordenação clicável nos cabeçalhos
+# ======================
 @app.callback(
-    Output('grafico', 'figure'),
-    [Input('tabela', 'children')],
-    [State('pagina-atual', 'value'),
-     State('moeda-base', 'value')]
+    Output('ordenacao-store', 'data'),
+    [
+        Input(f'col-{col}', 'n_clicks')
+        for col in [
+            'rank', 'name', 'preco_valor', '1h_valor', '24h_valor', '7d_valor', 'volume_valor', 'marketcap_valor', 'supply_valor'
+        ]
+    ],
+    prevent_initial_call=True
 )
-def atualizar_grafico(_, pagina, moeda):
-    return go.Figure()  # Mantido vazio por enquanto
+def ordenar_tabela(*args):
+    colunas = ['rank', 'name', 'preco_valor', '1h_valor', '24h_valor', '7d_valor', 'volume_valor', 'marketcap_valor', 'supply_valor']
+    for i, n_clicks in enumerate(args):
+        if ctx.triggered_id == f'col-{colunas[i]}':
+            if tipo_ordenacao['coluna'] == colunas[i]:
+                tipo_ordenacao['asc'] = not tipo_ordenacao['asc']
+            else:
+                tipo_ordenacao['coluna'] = colunas[i]
+                tipo_ordenacao['asc'] = True
+    return None
 
+# ======================
+# Callback para paginacao
+# ======================
 @app.callback(
     Output('pagina-atual', 'value'),
     [Input('primeira-pagina', 'n_clicks'),
@@ -187,16 +264,30 @@ def atualizar_grafico(_, pagina, moeda):
     State('pagina-atual', 'value')
 )
 def paginacao(primeira, anterior, proxima, ultima, atual):
-    ctx = dash.callback_context.triggered_id
-    if ctx == 'primeira-pagina':
+    acao = ctx.triggered_id
+    if acao == 'primeira-pagina':
         return 1
-    elif ctx == 'anterior':
+    elif acao == 'anterior':
         return max(1, atual - 1)
-    elif ctx == 'proxima':
+    elif acao == 'proxima':
         return atual + 1
-    elif ctx == 'ultima-pagina':
+    elif acao == 'ultima-pagina':
         return 98
     return atual
 
+# ======================
+# Callback para alternar tema
+# ======================
+@app.callback(
+    Output('tema-claro', 'data'),
+    Input('botao-tema', 'n_clicks'),
+    State('tema-claro', 'data')
+)
+def alternar_tema(n, atual):
+    return not atual
+
+# ======================
+# Inicializa servidor
+# ======================
 if __name__ == '__main__':
     app.run(debug=True)
