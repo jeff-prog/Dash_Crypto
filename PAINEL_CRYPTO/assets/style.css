@@ -1,33 +1,165 @@
-/* ===================================================
-   STYLE.CSS - Painel de Criptomoedas com Dash
-   Estilização geral e responsiva com suporte a tema claro/escuro
-   =================================================== */
+/* =============================================
+   STYLE.CSS - CRYPTO WORLD
+   Temas: Dark, Light, Cyber Neon
+   ============================================= */
 
-/* ===========================
-   ESTILO GERAL DO SITE
-=========================== */
-
-body {
-    background: linear-gradient(135deg, #1f1c2c, #928dab); /* Gradiente roxo escuro para lavanda */
-    color: #ffffff;
-    font-family: 'Segoe UI', 'Inter', sans-serif;
+/* =======================
+   GERAL
+======================= */
+body, html {
     margin: 0;
     padding: 0;
-    transition: background-color 0.3s ease;
+    height: 100%;
+    font-family: 'Segoe UI', 'Inter', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+}
+/* =======================
+   TEMA: CYBER NEON
+======================= */
+body.modo-cyber {
+    background: url("/assets/img/crypto_back_hd.png") no-repeat center center fixed;
+    background-size: cover;
+    color: #00ffee;
 }
 
+body.modo-cyber table {
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+body.modo-cyber thead th {
+    background-color: #330066;
+    color: #00ffee;
+}
+
+body.modo-cyber tbody tr {
+    background-color: #120022;
+    color: #00ffee;
+}
+
+body.modo-cyber td img[src^="data:image"] {
+    background-color: #0f0f0f;
+}
+
+body.modo-cyber .seta-verde {
+    color: #00ff66;
+}
+
+body.modo-cyber .seta-vermelha {
+    color: #ff0066;
+}
+
+body.modo-cyber #paginacao button,
+body.modo-cyber #seletor-tema {
+    background-color: #220044;
+    color: #00ffee;
+}
+
+body.modo-cyber .Select-control {
+    background-color: #1a1a2e !important;
+    color: #00ffee !important;
+    border: 1px solid #00ffee !important;
+}
+
+/* =======================
+   TEMA: DARK MODE
+======================= */
+body.modo-escuro {
+    background: url("/assets/img/crypto_back_hd.png") no-repeat center center fixed;
+    background-size: cover;
+    color: #ffffff;
+}
+
+/* =======================
+   TEMA: LIGHT MODE
+======================= */
+body.modo-claro {
+    background: url("/assets/img/crypto_back_hd.png") no-repeat center center fixed;
+    background-size: cover;
+    color: #000;
+}
+
+body.modo-claro table {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+body.modo-claro thead th {
+    background-color: #ddd;
+    color: #000;
+}
+
+body.modo-claro tbody tr {
+    background-color: #fff;
+    color: #000;
+}
+
+body.modo-claro td img[src^="data:image"] {
+    background-color: #eaeaea;
+}
+
+body.modo-claro .seta-verde {
+    color: green;
+}
+
+body.modo-claro .seta-vermelha {
+    color: crimson;
+}
+
+body.modo-claro #paginacao button,
+body.modo-claro #seletor-tema {
+    background-color: #ccc;
+    color: #000;
+}
+
+body.modo-claro .Select-control,
+body.modo-claro .Select-placeholder,
+body.modo-claro .Select-value-label {
+    background-color: #fff !important;
+    color: #000 !important;
+    border: 1px solid #aaa !important;
+}
+
+body.modo-claro td,
+body.modo-claro th,
+body.modo-claro span,
+body.modo-claro label,
+body.modo-claro p {
+    color: #000 !important;
+}
+
+body.modo-claro input,
+body.modo-claro select,
+body.modo-claro textarea {
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #999;
+}
+body.modo-claro .seta-verde {
+    color: limegreen !important;
+}
+
+body.modo-claro .seta-vermelha {
+    color: red !important;
+}
+/* =======================
+   ELEMENTOS COMUNS
+======================= */
 h1 {
     font-size: 2.4em;
     text-align: center;
     margin-top: 100px;
     margin-bottom: 5px;
+    z-index: 2;
+    position: relative;
 }
 
 p {
     font-size: 0.7em;
     text-align: center;
     margin-bottom: 10px;
-    color: #00FFFF; /* Subtítulo mais suave */
+    color: #00FFFF;
+    z-index: 2;
+    position: relative;
 }
 
 label {
@@ -35,14 +167,15 @@ label {
     font-weight: bold;
     margin-bottom: 5px;
     display: block;
+    z-index: 2;
+    position: relative;
 }
 
-/* ===========================
-   BOTÕES E CONTROLES
-=========================== */
-
+/* =======================
+   BOTÕES E DROPDOWNS
+======================= */
 #paginacao button,
-#botao-tema {
+#seletor-tema {
     background-color: #292929;
     color: #fff;
     border: none;
@@ -55,27 +188,23 @@ label {
 }
 
 #paginacao button:hover,
-#botao-tema:hover {
+#seletor-tema:hover {
     background-color: #444;
 }
 
-.Select-control, .Select {
-    border-radius: 6px;
-    border: 1px solid #555 !important;
-    background-color: #1e1e1e !important;
-    color: #fff !important;
-}
-
-/* ===========================
-   TABELA DE CRIPTOMOEDAS
-=========================== */
-
+/* =======================
+   TABELA
+======================= */
 table {
     width: 95%;
     margin: auto;
     border-collapse: separate;
     border-spacing: 0 6px;
     font-size: 0.95rem;
+    background-color: rgba(0, 0, 0, 0.85);
+    border-radius: 10px;
+    z-index: 2;
+    position: relative;
 }
 
 thead th {
@@ -122,10 +251,9 @@ td img[src^="data:image"] {
     background-color: #0f0f0f;
 }
 
-/* ===========================
-   CORES DE VARIAÇÕES
-=========================== */
-
+/* =======================
+   VARIAÇÃO DE PREÇOS
+======================= */
 .seta-verde {
     color: limegreen;
     font-weight: bold;
@@ -136,57 +264,9 @@ td img[src^="data:image"] {
     font-weight: bold;
 }
 
-/* ===========================
-   TEMA CLARO (modo alternativo)
-=========================== */
-
-body.modo-claro {
-    background: linear-gradient(135deg, #e0e0e0, #ffffff);
-    color: #111;
-}
-
-body.modo-claro h1,
-body.modo-claro p {
-    color: #111;
-}
-
-body.modo-claro thead th {
-    background-color: #ddd;
-    color: #000;
-}
-
-body.modo-claro tbody tr {
-    background-color: #fff;
-    color: #000;
-}
-
-body.modo-claro td img[src^="data:image"] {
-    background-color: #eaeaea;
-}
-
-body.modo-claro .seta-verde {
-    color: green;
-}
-
-body.modo-claro .seta-vermelha {
-    color: crimson;
-}
-
-body.modo-claro #botao-tema,
-body.modo-claro #paginacao button {
-    background-color: #ccc;
-    color: #000;
-}
-
-body.modo-claro #botao-tema:hover,
-body.modo-claro #paginacao button:hover {
-    background-color: #bbb;
-}
-
-/* ===========================
-   CORREÇÃO DO DROPDOWN ESCURO
-=========================== */
-
+/* =======================
+   CORREÇÃO DO DROPDOWN (GLOBAL)
+======================= */
 .Select-menu-outer {
     background-color: #1e1e1e !important;
     color: #fff !important;
@@ -210,3 +290,33 @@ body.modo-claro #paginacao button:hover {
     background-color: #1e1e1e !important;
     color: #fff !important;
 }
+
+/* =======================
+   BORDAS EXTERNAS POR TEMA
+======================= */
+body.modo-cyber {
+    border: 10px solid #00ffee;
+    border-radius: 0;
+    margin: 0;
+    padding: 6px;
+    box-shadow: 0 0 25px #00ffee;
+    box-sizing: border-box;
+}
+
+body.modo-escuro {
+    border: 10px solid #00ffee;
+    border-radius: 0;
+    margin: 0;
+    padding: 6px; /* opcional para não colar o conteúdo */
+    box-shadow: 0 0 25px #00ffee;
+    box-sizing: border-box;
+}
+
+body.modo-claro {
+    border: 10px solid #111;
+    border-radius: 0;
+    margin: 0;
+    padding: 6px;
+    box-sizing: border-box;
+}
+

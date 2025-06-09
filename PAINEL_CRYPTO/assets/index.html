@@ -1,23 +1,57 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <!-- Define a codificação de caracteres -->
-    <meta charset="UTF-8" />
-
-    <!-- Título da aba do navegador -->
+    <meta charset="UTF-8">
     <title>CRYPTO WORLD</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+    
+    <!-- DASH PLACEHOLDER -->
+    {%metas%}
+    {%favicon%}
+    {%css%}
 
-    <!-- Responsividade para diferentes dispositivos -->
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+        window.onload = function () {
+            const temaSalvo = localStorage.getItem("temaSelecionado") || "modo-escuro";
+            document.body.classList.add(temaSalvo);
+            const seletor = document.getElementById("seletor-tema");
+            if (seletor) seletor.value = temaSalvo;
+        };
 
-    <!-- Ícone exibido na aba do navegador -->
-    <link rel="icon" href="/assets/icons/bitcoin.png" type="image/png" />
-
-    <!-- Linka o arquivo CSS com os estilos personalizados -->
-    <link rel="stylesheet" href="/assets/style.css" />
+        function alterarTema(select) {
+            const tema = select.value;
+            document.body.classList.remove("modo-escuro", "modo-claro", "modo-cyber");
+            document.body.classList.add(tema);
+            localStorage.setItem("temaSelecionado", tema);
+        }
+    </script>
 </head>
 <body>
-    <!-- Div que o Dash usa como ponto de entrada para renderizar os componentes -->
-    <div id="react-entry-point"></div>
+
+    <header style="display: flex; justify-content: space-between; align-items: center; padding: 20px;">
+    <!-- <h1>CRYPTO WORLD</h1> -->
+    <div>
+        <label for="seletor-tema" style="margin-right: 8px;">Theme:</label>
+        <select id="seletor-tema" onchange="alterarTema(this)" class="Select-control">
+            <option value="modo-cyber">Cyber Neon</option>
+            <option value="modo-escuro">Dark</option>
+            <option value="modo-claro">Light</option>
+        </select>
+    </div>
+</header>
+
+
+    <main style="padding: 10px 20px;">
+        <!-- DASH CONTENT -->
+        {%app_entry%}
+    </main>
+
+    <footer>
+        {%config%}
+        {%scripts%}
+        {%renderer%}
+    </footer>
+
 </body>
 </html>

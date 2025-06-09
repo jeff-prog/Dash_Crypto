@@ -14,12 +14,23 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import time
 import copy
+import os
 
-app = dash.Dash(__name__, suppress_callback_exceptions=True)
+app = dash.Dash(
+    __name__,
+    suppress_callback_exceptions=True,
+    external_stylesheets=[
+        "https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap"
+    ]
+)
 app.title = "CRYPTO WORLD"
 
-tipo_ordenacao = {"coluna": None, "asc": True}
+# Força o Dash a usar o index.html personalizado na pasta assets
+caminho_index = os.path.join(os.path.dirname(__file__), "assets", "index.html")
+with open(caminho_index, "r", encoding="utf-8") as f:
+    app.index_string = f.read()
 
+tipo_ordenacao = {"coluna": None, "asc": True}
 cache_dados = {}
 cache_expiracao = 60
 
@@ -53,17 +64,13 @@ def obter_criptos(moeda='usd', pagina=1):
 
 def mini_grafico(lista):
     fig, ax = plt.subplots(figsize=(2.2, 0.6), dpi=100)
-
     x = list(range(len(lista)))
     ax.plot(x, lista, color='lime', linewidth=1)
     ax.fill_between(x, lista, color='lime', alpha=0.3)
-
     ax.set_xlim(min(x), max(x))
     ax.set_ylim(min(lista), max(lista) * 1.01)
-
     ax.axis('off')
     plt.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.01)
-
     buffer = BytesIO()
     plt.savefig(buffer, format='png', transparent=True)
     buffer.seek(0)
@@ -87,11 +94,11 @@ def barra_supply(porcentagem):
     })
 
 def icone(variacao):
-    valor = float(variacao.replace('%',''))
-    cor = "limegreen" if valor > 0 else "red"
+    valor = float(variacao.replace('%', ''))
+    classe = "seta-verde" if valor > 0 else "seta-vermelha"
     simbolo = "▲" if valor > 0 else "▼"
     return html.Span([
-        html.Span(simbolo, style={"color": cor, "fontWeight": "bold"}),
+        html.Span(simbolo, className=classe),
         f" {variacao}"
     ])
 
@@ -146,8 +153,34 @@ def construir_tabela(dados):
     })
 
 app.layout = html.Div([
-    html.Button("Alternar Tema", id='botao-tema', n_clicks=0, style={"margin": "10px"}),
-    html.H1("CRYPTO WORLD",style={"marginBottom": "160px"}),
+    html.Script("""
+        document.addEventListener('DOMContentLoaded', function () {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === "attributes" && mutation.attributeName === "data") {
+                        const tema = document.querySelector('[id^="tema-selecionado"]').dataset.value;
+                        document.body.className = 'modo-' + tema;
+                    }
+                });
+            });
+            const alvo = document.querySelector('[id^="tema-selecionado"]');
+            if (alvo) {
+                observer.observe(alvo, { attributes: true });
+                const temaInicial = alvo.dataset.value || "dark";
+                document.body.className = 'modo-' + temaInicial;
+            }
+        });
+    """),
+
+    dcc.Store(id='tema-selecionado', data='dark'),
+
+    html.H1("CRYPTO WORLD", style={
+        "marginBottom": "160px",
+        "fontFamily": "'Orbitron', sans-serif",
+        "fontWeight": "700",
+        "letterSpacing": "2px",
+        "color": "#00FF99"
+    }),
 
     html.Div([
         html.Label("Currency:"),
@@ -165,6 +198,7 @@ app.layout = html.Div([
         dcc.Input(id='filtro-nome', type='text', placeholder='Filtrar por nome da moeda', debounce=True,
                   style={"width": "100%", "padding": "10px"})
     ], style={"width": "30%", "margin": "auto", "marginBottom": "20px"}),
+
     html.P("Loaded every 60 seconds", style={"textAlign": "center"}),
 
     dcc.Store(id='dados-memoria'),
@@ -182,7 +216,10 @@ app.layout = html.Div([
     ], style={"display": "flex", "justifyContent": "center", "gap": "10px", "marginTop": "20px"}),
 
     dcc.Interval(id='intervalo', interval=30 * 1000, n_intervals=0)
-])
+],
+style={
+    "minHeight": "100vh"
+})
 
 @app.callback(
     Output('dados-memoria', 'data'),
@@ -190,9 +227,9 @@ app.layout = html.Div([
      Input('pagina-atual', 'value'),
      Input('intervalo', 'n_intervals'),
      Input('filtro-nome', 'value'),
-     Input('ordenacao-store', 'data')]  # <-- adicione esta linha
+     Input('ordenacao-store', 'data')]
 )
-def carregar_dados(moeda, pagina, n, filtro_nome, ordenacao):  # <-- adicione o argumento ordenacao
+def carregar_dados(moeda, pagina, n, filtro_nome, ordenacao):
     dados = obter_criptos(moeda, pagina)
     simbolo = {'usd': '$', 'brl': 'R$', 'eur': '€'}.get(moeda, '')
     lista = []
@@ -223,7 +260,6 @@ def carregar_dados(moeda, pagina, n, filtro_nome, ordenacao):  # <-- adicione o 
     if filtro_nome:
         lista = [l for l in lista if filtro_nome.lower() in l['name'].lower()]
 
-    # Ordena a lista conforme o último estado de ordenação
     if ordenacao and 'coluna' in ordenacao:
         lista.sort(key=lambda x: x[ordenacao['coluna']], reverse=not ordenacao['asc'])
 
@@ -237,22 +273,18 @@ def carregar_dados(moeda, pagina, n, filtro_nome, ordenacao):  # <-- adicione o 
 def atualizar_tabela(dados, ordenacao):
     if not dados:
         return "Sem dados"
-
     dados = copy.deepcopy(dados)
     if ordenacao and 'coluna' in ordenacao:
         tipo_ordenacao.update(ordenacao)
         coluna = ordenacao['coluna']
         dados.sort(key=lambda x: x[coluna], reverse=not ordenacao['asc'])
-
     return construir_tabela(dados)
 
 @app.callback(
     Output('ordenacao-store', 'data'),
     [Input(f'col-{col}', 'n_clicks') for col in [
         'rank', 'name', 'preco_valor', '1h_valor', '24h_valor', '7d_valor',
-        'volume_valor', 'marketcap_valor', 'supply_valor'
-    ]],
-    prevent_initial_call=True
+        'volume_valor', 'marketcap_valor', 'supply_valor']]
 )
 def ordenar_tabela(*args):
     colunas = ['rank', 'name', 'preco_valor', '1h_valor', '24h_valor',
@@ -285,12 +317,11 @@ def paginacao(primeira, anterior, proxima, ultima, atual):
     return atual
 
 @app.callback(
-    Output('tema-claro', 'data'),
-    Input('botao-tema', 'n_clicks'),
-    State('tema-claro', 'data')
+    Output('tema-selecionado', 'data'),
+    Input('seletor-tema', 'value')
 )
-def alternar_tema(n, atual):
-    return not atual
+def mudar_tema(valor):
+    return valor
 
 if __name__ == '__main__':
     app.run(debug=True)
